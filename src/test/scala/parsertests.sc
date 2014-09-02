@@ -27,6 +27,7 @@ m4(List("test.foo.bar"))
 // testing the expression parser
 //
 
+// this universe is a simulated symbol table
 // universe MUST have values for all defined variables in the above predicate AND
 // the keys must all have the same wildcard value (foo)
 implicit val universe = Map[String,Double] (
@@ -50,8 +51,6 @@ val pred ="""
       | 2 * "A.*.B" + "X.Y.*" / 4 == "K.*.M"
   """.stripMargin
 val predicate = parser.parsePredicate(pred)
-
-// this universe is a simulated metrics cache with the current value of each metric
 
 //predicate.get.resolve
 predicate.get.eval(predicate.get.resolve)
