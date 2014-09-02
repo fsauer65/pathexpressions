@@ -162,7 +162,6 @@ object Expressions {
       }
     }
 
-    // FIXME: .? should be .*
     def term: Parser[Expression] = factor ~ (("*" | "/") ~ factor).* ^^ {
       case head ~ tail => tail.foldLeft(head) {
         case (left,"*" ~ right) => Multiply(left, right)
