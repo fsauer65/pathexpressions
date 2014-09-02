@@ -14,13 +14,18 @@ val universe = Map[String,Double] (
 )
 // test expressions
 val parser = new Expressions.Parser
+val constant = "1"
+parser.parseExpression(constant)
+val variable = """"A.*.B""""
+val vp = parser.parseExpression(variable).get
+val resolvedVariable = vp.eval(vp.resolve(universe))
 val expression = """
                   |
                   | 2 * "A.*.B" / 1 + ("X.Y.*" / 4) - "K.*.M"
                   |
                  """.stripMargin
 val x = parser.parseExpression(expression).get
-x.eval(x.resolve(universe))
+val evaluatedExpression = x.eval(x.resolve(universe))
 // test predicates
 val pred = """
             |
@@ -29,6 +34,6 @@ val pred = """
            """.stripMargin
 val predicate = parser.parsePredicate(pred).get
 
-predicate.eval(predicate.resolve(universe))
+val evaluatedPredicate = predicate.eval(predicate.resolve(universe))
 
 
