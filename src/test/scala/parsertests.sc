@@ -16,7 +16,7 @@ val universe = Map[String,Double] (
 val parser = new Expressions.Parser
 val expression = """
                   |
-                  | 2 * "A.*.B" + ("X.Y.*" / 4)
+                  | 2 * "A.*.B" / 1 + ("X.Y.*" / 4) - "K.*.M"
                   |
                  """.stripMargin
 val x = parser.parseExpression(expression).get

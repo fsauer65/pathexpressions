@@ -155,18 +155,19 @@ object Expressions {
 
     def glob: Parser[Regex] = stringLiteral ^^ {globToRegex(_)}
 
-    // FIXME: .? should be .*
-    def expr: Parser[Expression] = term ~ (("+" | "-") ~ term).? ^^ {
-      case term ~ None => term
-      case left ~ Some(("+" ~ right)) => Plus(left, right)
-      case left ~ Some(("-" ~ right)) => Minus(left, right)
+    def expr: Parser[Expression] = term ~ (("+" | "-") ~ term).* ^^ {
+      case head ~ tail => tail.foldLeft(head) {
+        case (left,"+" ~ right) => Plus(left, right)
+        case (left,"-" ~ right) => Minus(left, right)
+      }
     }
 
     // FIXME: .? should be .*
-    def term: Parser[Expression] = factor ~ (("*" | "/") ~ factor).? ^^ {
-      case factor ~ None => factor
-      case left ~ Some(("*" ~ right)) => Multiply(left, right)
-      case left ~ Some(("/" ~ right)) => Divide(left, right)
+    def term: Parser[Expression] = factor ~ (("*" | "/") ~ factor).* ^^ {
+      case head ~ tail => tail.foldLeft(head) {
+        case (left,"*" ~ right) => Multiply(left, right)
+        case (left,"/" ~ right) => Divide(left, right)
+      }
     }
 
     def factor: Parser[Expression] = variable | ("(" ~> expr <~ ")") | constant
