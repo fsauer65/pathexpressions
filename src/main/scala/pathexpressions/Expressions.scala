@@ -183,9 +183,9 @@ object Expressions {
       | "%" ^^^ {0.01}
     )
 
-    def predicate: Parser[Predicate] = expr ~ ("<" | "<=" | "==" | ">=" | ">") ~ expr ^^ {
-      case left ~ "<"  ~ right => LT(left, right)
+    def predicate: Parser[Predicate] = expr ~ ("<=" | "<" | "==" | ">=" | ">") ~ expr ^^ {
       case left ~ "<=" ~ right => LTE(left, right)
+      case left ~ "<"  ~ right => LT(left, right)
       case left ~ "==" ~ right => EQ(left, right)
       case left ~ ">=" ~ right => GTE(left, right)
       case left ~ ">"  ~ right => GT(left, right)
