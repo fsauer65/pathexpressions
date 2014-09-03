@@ -36,9 +36,8 @@ because even though there still is an `X.Y.bar` which matches `"X.Y.*"` but the 
 bar as a value for their wildcards.
 
 
-The grammar is a standard expression grammer based on the one in the Prograaming in Scala book, but with added
-predicates and obviously the paths variables. It also has some units defined to write things like `10 MB` or `50 %`
-as constant values.
+The grammar is a standard expression grammer based on the one in the Programming in Scala book's chapter on parser combinators, but with added
+predicates and obviously the paths variables. It also has some units defined to write things like `10 MB` or `50 %` as constant values.
 
 The above predicate translates to this AST:
 
@@ -66,10 +65,13 @@ To parse an expression of predicate:
 This returns a standard ParseResult. Ignoring the error handling for a second, to evaluate the result:
 
     val predicate = parser.parsePredicate("""2 * "A.*.B" + "X.Y.*" / 4 >= "K.*.M"""").get
-    predicate.value // expects an implicit Map[String,Double) as symbolTable
+    predicate.value // value method expects an implicit Map[String,Double) as symbolTable
 
 
 Same for expressions:
 
     val expression = parser.parseExpression("""2 * "A.*.B" / 1 + ("X.Y.*" / 4) - "K.*.M""""").get
-    expression.value // expects an implicit Map[String,Double) as symbolTable
+    expression.value // value method expects an implicit Map[String,Double) as symbolTable
+
+
+The parsertests.sc file in the test directory is an IntelliJ Scala IDE worksheet. This code is in need of formal automated tests, pull requests welcome!
