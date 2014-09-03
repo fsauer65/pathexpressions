@@ -16,8 +16,9 @@ object Expressions {
      * @return list of matches with the full match as well as a List with all wildcard values
      */
     def apply(path:String):Iterable[Match] = vars.flatMap { case v =>
+      // Note: in matchData, the actual groups are 1-based. group 0 is the full match, we want both
       v.path.findAllIn(path).matchData.flatMap (m => Range(0,m.groupCount+1) map (m.group(_))).toList match {
-        case series :: groups => Some(Match(v,series,groups))
+        case full :: groups => Some(Match(v,full,groups))
         case _ => None
       }
     }
