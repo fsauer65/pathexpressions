@@ -131,7 +131,7 @@ object Expressions {
     override def eval(l:Double,r:Double):Boolean = l > r
   }
 
-  class Parser extends JavaTokenParsers {
+  trait PathExpressionParser extends JavaTokenParsers {
 
     /**
      * converts a glob-style expression into a proper regex with escaped periods and groups around all wildcards
@@ -179,8 +179,10 @@ object Expressions {
 
     def variable: Parser[Expression] = glob ^^ (Variable(_))
 
-    def parseExpression(text: String): ParseResult[Expression] = parseAll(expr, text)
+  }
 
+  object Parser extends PathExpressionParser {
+    def parseExpression(text: String): ParseResult[Expression] = parseAll(expr, text)
     def parsePredicate(text: String): ParseResult[Predicate] = parseAll(predicate, text)
   }
 

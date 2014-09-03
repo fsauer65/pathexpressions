@@ -1,4 +1,4 @@
-import pathexpressions.Expressions
+import pathexpressions.Expressions._
 
 //
 // testing the expression parser
@@ -21,19 +21,18 @@ val missingVar = Map[String,Double] (
 
 
 // test expressions
-val parser = new Expressions.Parser
 val constant = "10 %"
-val c = parser.parseExpression(constant).get
+val c = Parser.parseExpression(constant).get
 val cval = c.value
 val variable = """"A.*.B""""
-val vp = parser.parseExpression(variable).get
+val vp = Parser.parseExpression(variable).get
 val resolvedVariable = vp.value
 val expression = """
                   |
                   | 2 * "A.*.B" / 1 + ("X.Y.*" / 4) - "K.*.M"
                   |
                  """.stripMargin
-val x = parser.parseExpression(expression).get
+val x = Parser.parseExpression(expression).get
 val evaluatedExpression = x.value
 val xWithoutXY = x.value(missingVar)
 // test predicates
@@ -42,6 +41,6 @@ val pred = """
             | 2 * "A.*.B" + "X.Y.*" / 4 == "K.*.M"
             |
            """.stripMargin
-val predicate = parser.parsePredicate(pred).get
+val predicate = Parser.parsePredicate(pred).get
 val evaluatedPredicate = predicate.value
 val pWithoutXY = predicate.value(missingVar)

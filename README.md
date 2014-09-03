@@ -61,19 +61,16 @@ The above predicate translates to this AST:
 
 Using
 -----
-To parse an expression of predicate:
+To parse an expression and evaluate predicate (Ignoring the error handling for a second):
 
-    val parser = new Expressions.Parser
 
-This returns a standard ParseResult. Ignoring the error handling for a second, to evaluate the result:
-
-    val predicate = parser.parsePredicate("""2 * "A.*.B" + "X.Y.*" / 4 >= "K.*.M"""").get
+    val predicate = Expressions.Parser.parsePredicate("""2 * "A.*.B" + "X.Y.*" / 4 >= "K.*.M"""").get
     predicate.value // value method expects an implicit Map[String,Double) as symbolTable
 
 
 Same for expressions:
 
-    val expression = parser.parseExpression("""2 * "A.*.B" / 1 + ("X.Y.*" / 4) - "K.*.M""""").get
+    val expression = Expressions.Parser.parseExpression("""2 * "A.*.B" / 1 + ("X.Y.*" / 4) - "K.*.M""""").get
     expression.value // value method expects an implicit Map[String,Double) as symbolTable
 
 
