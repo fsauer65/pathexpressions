@@ -37,7 +37,7 @@ object Expressions {
    * @tparam T Double for Expressions and Boolean for Predicates
    */
   sealed trait Node[T] {
-    protected val left: Expression
+    protected val left : Expression
     protected val right: Expression
 
     /**
@@ -66,7 +66,7 @@ object Expressions {
 
     /**
      * Default implementation of Recursive tree traverser for all internal nodes.
-     * The leaf nodes Constant and Variable override to terminate the recursion.
+     * Only the leaf nodes Constant and Variable override in order to terminate the recursion.
      * @param resolvedVars Map of all resolved variables
      * @return Some(T) or None if left or right subtree return None
      */
@@ -84,19 +84,19 @@ object Expressions {
   sealed trait Expression extends Node[Double]
 
   case class Constant(v:Double) extends Expression {
-    override val left = this
-    override val right = this
+    override val left  = this // a smell from not having a separate leaf node class
+    override val right = this // a smell from not having a separate leaf node class
     override lazy val collectVars: List[Variable] = List.empty
     override def eval(implicit symbolTable: Map[Variable,Double]): Option[Double] = Some(v)
-    override def eval(l:Double,r:Double) = v // won't get called
+    override def eval(l:Double,r:Double) = 0.0 // a smell from not having a separate leaf node class
   }
 
   case class Variable(path:Regex) extends Expression {
-    override val left = this
-    override val right = this
+    override val left  = this // a smell from not having a separate leaf node class
+    override val right = this  // a smell from not having a separate leaf node class
     override lazy val collectVars: List[Variable] = List(this)
+    override def eval(l:Double,r:Double) = 0.0 // a smell from not having a separate leaf node class
     override def eval(implicit resolvedVars: Map[Variable,Double]): Option[Double] = resolvedVars.get(this)
-    override def eval(l:Double,r:Double):Double = 0.0 // won't get called
   }
 
   case class Minus(left:Expression, right:Expression) extends Expression {
@@ -139,7 +139,7 @@ object Expressions {
      */
     private def globToRegex(s: String): Regex = s"""^${s.replace("\"", "").replace(".", "\\.").replace("*", "(.*)")}$$""".r
 
-    def glob: Parser[Regex] = stringLiteral ^^ {globToRegex(_)}
+    def glob: Parser[Regex] = stringLiteral ^^ (globToRegex(_))
 
     def expr: Parser[Expression] = term ~ (("+" | "-") ~ term).* ^^ {
       case head ~ tail => tail.foldLeft(head) {
@@ -162,10 +162,10 @@ object Expressions {
     }
 
     def unit: Parser[Double] = (
-        "[kK][bB]?".r ^^^ {1000.0}
-      | "[mM][bB]?".r ^^^ {1000 * 1000.0}
-      | "[gG][bB]?".r ^^^ {1000 * 1000 * 1000.0}
-      | "%" ^^^ {0.01}
+        "[kK][bB]?".r ^^^ 1000.0
+      | "[mM][bB]?".r ^^^ 1000 * 1000.0
+      | "[gG][bB]?".r ^^^ 1000 * 1000 * 1000.0
+      | "%" ^^^ 0.01
     )
 
     def predicate: Parser[Predicate] = expr ~ ("<=" | "<" | "==" | ">=" | ">") ~ expr ^^ {
@@ -176,17 +176,11 @@ object Expressions {
       case left ~ ">"  ~ right => GT(left, right)
     }
 
-    /**
-     * Does a deferred lookup in the current metrics values for the first one that matches the regex and returns its value
-     * @return
-     */
-    def variable: Parser[Expression] = glob ^^ {
-      case x => Variable(x)
-    }
+    def variable: Parser[Expression] = glob ^^ (Variable(_))
 
-    def parseExpression(rules: String): ParseResult[Expression] = parseAll(expr, rules)
+    def parseExpression(text: String): ParseResult[Expression] = parseAll(expr, text)
 
-    def parsePredicate(rules: String): ParseResult[Predicate] = parseAll(predicate, rules)
+    def parsePredicate(text: String): ParseResult[Predicate] = parseAll(predicate, text)
   }
 
 }
