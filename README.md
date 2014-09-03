@@ -1,15 +1,15 @@
 Path-Expression parser and evaluator
 ====================================
 
-Path expressions are regular algebraic expressions and predicates in which the variables are a form of regular expressions themselves.
-They are glob-style dot-separated paths with wildcards like used in graphite metrics. The expressions parsed and evaluated by this code
-only yield a result when:
+Path expressions (in my context - there are others) are regular algebraic expressions and predicates in which the variables are
+a glob-style dot-separated path with wildcards as found for example in graphite metrics.
+The expressions parsed and evaluated by this code only yield a result when:
 
-1. all variables (paths) resolve to a value
-2. all wildcards used in the matching paths match to the same value.
+1. all variables (paths) match a variable in a given symbol table
+2. all wildcards used in the matching paths have the same value for all variables in the entire expression or predicate.
 
 Example:
-
+--------
 Given the following variables:
 
     implicit val symbolTable = Map[String,Double] (
@@ -35,7 +35,8 @@ If however we remove X.Y.foo from the symbol table, both the expression and pred
 because even though there still is an `X.Y.bar` which matches `"X.Y.*"` but the other paths don't exist with
 bar as a value for their wildcards.
 
-
+Grammar
+-------
 The grammar is a standard expression grammer based on the one in the Programming in Scala book's chapter on parser combinators, but with added
 predicates and obviously the paths variables. It also has some units defined to write things like `10 MB` or `50 %` as constant values.
 
@@ -58,6 +59,8 @@ The above predicate translates to this AST:
        )
     )
 
+Using
+-----
 To parse an expression of predicate:
 
     val parser = new Expressions.Parser
