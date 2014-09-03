@@ -19,14 +19,7 @@ val missingVar = Map[String,Double] (
   "K.foo.M" -> 7.0
 )
 
-implicit class XEvaluator(x:Expressions.Expression) {
-  def value = x.eval(x.resolve)
-  def value(vars:Map[String,Double]) = x.eval(x.resolve(vars))
-}
-implicit class PEvaluator(x:Expressions.Predicate) {
-  def value = x.eval(x.resolve)
-  def value(vars:Map[String,Double]) = x.eval(x.resolve(vars))
-}
+
 // test expressions
 val parser = new Expressions.Parser
 val constant = "10 %"

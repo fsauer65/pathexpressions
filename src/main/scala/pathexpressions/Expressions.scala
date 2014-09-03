@@ -6,7 +6,7 @@ import scala.collection.Map
 
 object Expressions {
 
-  case class Match(key:String, groups:List[String])
+  case class Match(target: Variable, key:String, groups:List[String])
 
   case class Matcher(vars: Variable*) {
 
@@ -15,9 +15,9 @@ object Expressions {
      * @param path string to match
      * @return list of matches with the full match as well as a List with all wildcard values
      */
-    def apply(path:String):Iterable[Match] = vars.map(_.path).flatMap { case rx =>
-      rx.findAllIn(path).matchData.flatMap (m => Range(0,m.groupCount+1) map (m.group(_))).toList match {
-        case series :: groups => Some(Match(series,groups))
+    def apply(path:String):Iterable[Match] = vars.flatMap { case v =>
+      v.path.findAllIn(path).matchData.flatMap (m => Range(0,m.groupCount+1) map (m.group(_))).toList match {
+        case series :: groups => Some(Match(v,series,groups))
         case _ => None
       }
     }
@@ -32,32 +32,45 @@ object Expressions {
     }.flatMap (_._2)
   }
 
+  /**
+   * Base trait for both Expressions and Predicates. T is the result type of evaluating a node
+   * @tparam T Double for Expressions and Boolean for Predicates
+   */
   sealed trait Node[T] {
-    val left: Expression
-    val right: Expression
+    protected val left: Expression
+    protected val right: Expression
 
     /**
      * collect a list of all Variable nodes used in the subtree starting at this node
      * @return
      */
-    lazy val collectVars: List[Variable] = left.collectVars ++ right.collectVars
+    protected lazy val collectVars: List[Variable] = left.collectVars ++ right.collectVars
 
     /**
      * resolve all variables by looking them up in the given symbol table.
      * All wildcards must resolve to the same value
-     * @param universe symbol table to find the variable values
+     * @param symbolTable symbol table to find the variable values
      * @return list of matches or empty if not all variables could be resolved (with the same wildcards)
      */
-    def resolve(implicit universe: Map[String,Double]):Map[String,Double] =
-      Matcher(collectVars:_*)(universe.keys).foldLeft(Map[String,Double]()) {
-        case (result,Match(series, _)) => result.updated(series,universe.get(series).get)
+    protected def resolve(implicit symbolTable: Map[String,Double]):Map[Variable,Double] =
+      Matcher(collectVars:_*)(symbolTable.keys).foldLeft(Map[Variable,Double]()) {
+        case (result,Match(v,series, _)) => result.updated(v,symbolTable.get(series).get)
       }
 
     /**
+     * Only public entry point in Node:
      * Evaluate the value of this node. If any variable is undefined, return None
      * @return Option[Boolean] for predicates or Option[Double] for expressions
      */
-    def eval(implicit universe: Map[String,Double]): Option[T] = for {l <- left.eval; r <- right.eval} yield eval(l,r)(resolve)
+    def value(implicit symbolTable: Map[String,Double]): Option[T] = eval(resolve)
+
+    /**
+     * Default implementation of Recursive tree traverser for all internal nodes.
+     * The leaf nodes Constant and Variable override to terminate the recursion.
+     * @param resolvedVars Map of all resolved variables
+     * @return Some(T) or None if left or right subtree return None
+     */
+    protected def eval(implicit resolvedVars: Map[Variable,Double]): Option[T] = for {l <- left.eval; r <- right.eval} yield eval(l,r)
 
     /**
      * Abstract actual evaluation function. Expressions return Double, Predicates return Boolean
@@ -65,59 +78,56 @@ object Expressions {
      * @param r right value
      * @return either a Boolean for Predicates or a Double for expressions
      */
-    def eval(l:Double,r:Double)(implicit universe: Map[String,Double]):T
+    protected def eval(l:Double,r:Double):T
   }
 
   sealed trait Expression extends Node[Double]
 
-  case class Constant(value:Double) extends Expression {
+  case class Constant(v:Double) extends Expression {
     override val left = this
     override val right = this
     override lazy val collectVars: List[Variable] = List.empty
-    override def eval(implicit universe: Map[String,Double]): Option[Double] = Some(value)
-    override def eval(l:Double,r:Double)(implicit universe: Map[String,Double]) = value // won't get called
+    override def eval(implicit symbolTable: Map[Variable,Double]): Option[Double] = Some(v)
+    override def eval(l:Double,r:Double) = v // won't get called
   }
 
   case class Variable(path:Regex) extends Expression {
     override val left = this
     override val right = this
     override lazy val collectVars: List[Variable] = List(this)
-    override def eval(implicit universe: Map[String,Double]): Option[Double] = {
-      //println(s"looking up $path in $universe")
-      universe.find{case (k,v)=> path.findFirstIn(k).isDefined}.map(_._2)
-    }
-    override def eval(l:Double,r:Double)(implicit universe: Map[String,Double]):Double = 0.0 // won't get called
+    override def eval(implicit resolvedVars: Map[Variable,Double]): Option[Double] = resolvedVars.get(this)
+    override def eval(l:Double,r:Double):Double = 0.0 // won't get called
   }
 
   case class Minus(left:Expression, right:Expression) extends Expression {
-    override def eval(l:Double, r:Double)(implicit universe: Map[String,Double]):Double = l - r
+    override def eval(l:Double, r:Double):Double = l - r
   }
   case class Plus(left:Expression, right:Expression) extends  Expression {
-    override def eval(l:Double, r:Double)(implicit universe: Map[String,Double]):Double = l + r
+    override def eval(l:Double, r:Double):Double = l + r
   }
   case class Multiply(left:Expression, right:Expression) extends Expression {
-    override def eval(l:Double, r:Double)(implicit universe: Map[String,Double]):Double = l * r
+    override def eval(l:Double, r:Double):Double = l * r
   }
   case class Divide(left:Expression, right:Expression) extends Expression {
-    override def eval(l:Double, r:Double)(implicit universe: Map[String,Double]):Double = l / r
+    override def eval(l:Double, r:Double):Double = l / r
   }
 
   sealed trait Predicate extends Node[Boolean]
 
   case class LT(left:Expression, right: Expression) extends Predicate {
-    override def eval(l:Double,r:Double)(implicit universe: Map[String,Double]):Boolean = l < r
+    override def eval(l:Double,r:Double):Boolean = l < r
   }
   case class LTE(left:Expression, right: Expression) extends Predicate {
-    override def eval(l:Double,r:Double)(implicit universe: Map[String,Double]):Boolean = l <= r
+    override def eval(l:Double,r:Double):Boolean = l <= r
   }
   case class EQ(left:Expression, right: Expression) extends Predicate {
-    override def eval(l:Double,r:Double)(implicit universe: Map[String,Double]):Boolean = l == r
+    override def eval(l:Double,r:Double):Boolean = l == r
   }
   case class GTE(left:Expression, right: Expression) extends Predicate {
-    override def eval(l:Double,r:Double)(implicit universe: Map[String,Double]):Boolean = l >= r
+    override def eval(l:Double,r:Double):Boolean = l >= r
   }
   case class GT(left:Expression, right: Expression) extends Predicate {
-    override def eval(l:Double,r:Double)(implicit universe: Map[String,Double]):Boolean = l > r
+    override def eval(l:Double,r:Double):Boolean = l > r
   }
 
 
