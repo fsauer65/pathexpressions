@@ -6,9 +6,9 @@ import scala.collection.Map
 
 object Expressions {
 
-  case class Match(target: Variable, key:String, groups:List[String])
+  private case class Match(target: Variable, key:String, groups:List[String])
 
-  case class Matcher(vars: Variable*) {
+  private case class Matcher(vars: Variable*) {
 
     /**
      * Match a single string against all my variables
@@ -130,34 +130,10 @@ object Expressions {
     override def eval(l:Double,r:Double):Boolean = l > r
   }
 
-
-  /**
-   * Parse expressions and predicates containing glob-style patterns as variables (these need to be quoted).
-   * Example:
-   *    2 * "A.*.B" + "X.Y.*" / 4 >= 80 % * "K.*.M" is a valid predicate, which translated to the following tree:
-   *
-   * GTE(
-   *    Plus(
-   *       Multiply(
-   *          Constant(2.0),
-   *          Variable(&#94;A\.(.*)\.B$)
-   *       ),
-   *       Divide(
-   *          Variable(&#94;X\.Y\.(.*)$),
-   *          Constant(4.0)
-   *       )
-   *    ),
-   *    Multiply(
-   *       Constant(0.8),
-   *       Variable(&#94;K\.(.*)\.M$)
-   *    )
-   * )
-   *
-   */
   class Parser extends JavaTokenParsers {
 
     /**
-     * converts a glob-style expression into a propoer regex with escaped periods and groups around all wildcards
+     * converts a glob-style expression into a proper regex with escaped periods and groups around all wildcards
      * @param s glob-style path with optional wildcards
      * @return a fully anchored regex with surrounding "" removed,  periods escaped and all * surrounded with ()
      */
