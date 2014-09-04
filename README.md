@@ -65,13 +65,13 @@ To parse an expression and evaluate predicate (Ignoring the error handling for a
 
 
     val predicate = Expressions.Parser.parsePredicate("""2 * "A.*.B" + "X.Y.*" / 4 >= "K.*.M"""").get
-    predicate.value // value method expects an implicit Map[String,Double) as symbolTable
+    predicate(symbolTable)
 
 
 Same for expressions:
 
     val expression = Expressions.Parser.parseExpression("""2 * "A.*.B" / 1 + ("X.Y.*" / 4) - "K.*.M""""").get
-    expression.value // value method expects an implicit Map[String,Double) as symbolTable
+    expression(symbolTable)
 
 
 The parsertests.sc file in the test directory is an IntelliJ Scala IDE worksheet. This code is in need of formal automated tests, pull requests welcome!
