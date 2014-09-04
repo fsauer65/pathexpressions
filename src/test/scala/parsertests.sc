@@ -33,8 +33,8 @@ val expression = """
                   |
                  """.stripMargin
 val x = Parser.parseExpression(expression).get
-val evaluatedExpression = x.value
-val xWithoutXY = x.value(missingVar)
+val evaluatedExpression = x(universe)
+val xWithoutXY = x(missingVar)
 // test predicates
 val pred = """
             |
@@ -42,5 +42,5 @@ val pred = """
             |
            """.stripMargin
 val predicate = Parser.parsePredicate(pred).get
-val evaluatedPredicate = predicate.value
-val pWithoutXY = predicate.value(missingVar)
+val evaluatedPredicate = predicate(universe)
+val pWithoutXY = predicate(missingVar)

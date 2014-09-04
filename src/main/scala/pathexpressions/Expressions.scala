@@ -82,7 +82,9 @@ object Expressions {
     protected def eval(l:Double,r:Double):T
   }
 
-  sealed trait Expression extends Node[Double]
+  sealed trait Expression extends Node[Double] {
+    def apply(symbolTable:Map[String,Double]) = value
+  }
 
   case class Constant(v:Double) extends Expression {
     override val left  = this // a smell from not having a separate leaf node class
@@ -113,7 +115,9 @@ object Expressions {
     override def eval(l:Double, r:Double):Double = l / r
   }
 
-  sealed trait Predicate extends Node[Boolean]
+  sealed trait Predicate extends Node[Boolean] {
+    def apply(symbolTable:Map[String,Double]) = value
+  }
 
   case class LT(left:Expression, right: Expression) extends Predicate {
     override def eval(l:Double,r:Double):Boolean = l < r
